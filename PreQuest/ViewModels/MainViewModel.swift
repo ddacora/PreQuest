@@ -19,18 +19,38 @@ class MainViewModel: ObservableObject {
     }
     
     func fetchData() {
-            ApiService().fetchApiDatas()
-                .sink(receiveCompletion: { completion in
+        ApiService().fetchApiDatas()
+            .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    print("finish")
+                    print("fetchData finish")
                 case .failure(let error):
-                    print(error)
+                    self.apiDatas = self.repository.fetchAllApiDatas()
+                    print("fetchData error: \(error)")
                 }
-            }, receiveValue: { ApiDatas in
-                self.repository.saveApiDatas(ApiDatas)
-                self.apiDatas.append(contentsOf: ApiDatas)
+            }, receiveValue: { [weak self] apiDatas in
+                guard let self = self else { return }
+                self.repository.saveApiDatas(apiDatas)
+                self.downloadImages(apiDatas: apiDatas)
+                self.apiDatas.append(contentsOf: apiDatas)
             }).store(in: &cancellables)
+    }
+    
+    func downloadImages(apiDatas: [ApiData]) {
+        for apiData in apiDatas {
+            if apiData.imageData == nil {
+                guard let imageUrl = URL(string: apiData.url) else {
+                    continue
+                }
+                Task {
+                    if let imageData = try? Data(contentsOf: imageUrl) {
+                        await MainActor.run {
+                            self.repository.saveImageData(for: apiData.id, imageData: imageData)
+                        }
+                    }
+                }
+            }
+        }
     }
     
 }

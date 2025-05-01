@@ -17,4 +17,12 @@ class ApiService {
             .value()
             .eraseToAnyPublisher()
     }
+    
+    func downloadImage(from urlString: String) -> AnyPublisher<Data, AFError> {
+        return AF.request(urlString)
+            .publishData()
+            .value()
+            .eraseToAnyPublisher()
+    }
+    
 }
