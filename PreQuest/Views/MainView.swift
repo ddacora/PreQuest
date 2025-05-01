@@ -20,6 +20,9 @@ struct MainView: View {
             Text("Hello, world!")
         }
         .padding()
+        .onAppear() {
+            viewModel.loadInitialData()
+        }
     }
 }
 

@@ -9,7 +9,14 @@ import Foundation
 import Combine
 
 class MainViewModel: ObservableObject {
+    @Published var apiDatas: [ApiData] = []
+
+    private let repository = ApiRepository()
     private var cancellables = Set<AnyCancellable>()
+    
+    func loadInitialData() {
+        fetchData()
+    }
     
     func fetchData() {
             ApiService().fetchApiDatas()
@@ -21,8 +28,9 @@ class MainViewModel: ObservableObject {
                     print(error)
                 }
             }, receiveValue: { ApiDatas in
-                print(ApiDatas)
-            }).store(in: &cancellables)        
+                self.repository.saveApiDatas(ApiDatas)
+                self.apiDatas.append(contentsOf: ApiDatas)
+            }).store(in: &cancellables)
     }
     
 }
