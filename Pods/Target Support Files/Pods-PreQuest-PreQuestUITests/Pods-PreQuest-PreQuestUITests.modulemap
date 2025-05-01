@@ -1,0 +1,6 @@
+framework module Pods_PreQuest_PreQuestUITests {
+  umbrella header "Pods-PreQuest-PreQuestUITests-umbrella.h"
+
+  export *
+  module * { export * }
+}
