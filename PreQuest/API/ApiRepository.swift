@@ -19,15 +19,18 @@ class ApiRepository {
     
     func fetchAllApiDatas() -> [ApiData] {
         let results = realm.objects(ApiData.self)
-        return Array(results)
+        let resultsArray = Array(results)
+        return resultsArray.shuffled()
     }
     
-    func saveImageData(for id: String, imageData: Data) {
+    func saveImageData(for id: String, imageData: Data) -> ApiData? {
         if let apiData = realm.object(ofType: ApiData.self, forPrimaryKey: id) {
             try? realm.write {
                 apiData.imageData = imageData
             }
+            return apiData
         }
+        return nil
     }
     
     func getApiData(for id: String) -> ApiData? {
@@ -39,8 +42,10 @@ class ApiRepository {
     }
     
     func deleteAllApiDatas() {
-        try? realm.write {
-            realm.deleteAll()
+        DispatchQueue.main.async {
+            try? self.realm.write {
+                self.realm.deleteAll()
+            }
         }
     }
 }
