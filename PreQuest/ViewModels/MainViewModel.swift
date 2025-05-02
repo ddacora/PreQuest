@@ -18,7 +18,12 @@ class MainViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     func loadInitialData() {
-        fetchData()
+        let localData = self.repository.fetchAllApiDatas()
+        if !localData.isEmpty {
+            self.apiDatas = localData
+        } else {
+            fetchData()
+        }
     }
     
     func fetchData() {
@@ -67,10 +72,16 @@ class MainViewModel: ObservableObject {
         return uiImage
     }
     
-    func loadMoreData(currentApiData: ApiData) {
+    func loadMoreApiData(currentApiData: ApiData) {
         guard !isLoading && !isOfflineMode else { return }
         guard let lastItem = apiDatas.last, currentApiData.id == lastItem.id else { return }
         fetchData()
     }
     
+    func handleNetworkConnectivityChange(isConnected: Bool) {
+        isOfflineMode = !isConnected
+        if isConnected && apiDatas.isEmpty {
+            loadInitialData()
+        }
+    }
 }
