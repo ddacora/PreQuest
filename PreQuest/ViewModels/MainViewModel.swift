@@ -7,10 +7,13 @@
 
 import Foundation
 import Combine
+import UIKit
 
 class MainViewModel: ObservableObject {
     @Published var apiDatas: [ApiData] = []
-
+    @Published var isOfflineMode: Bool = false
+    private var isLoading = false
+    
     private let repository = ApiRepository()
     private var cancellables = Set<AnyCancellable>()
     
@@ -23,16 +26,17 @@ class MainViewModel: ObservableObject {
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    print("fetchData finish")
+                    self.isLoading = false
                 case .failure(let error):
+                    self.isOfflineMode = true
                     self.apiDatas = self.repository.fetchAllApiDatas()
-                    print("fetchData error: \(error)")
                 }
             }, receiveValue: { [weak self] apiDatas in
                 guard let self = self else { return }
+                self.isOfflineMode = false
+                self.isLoading = true
                 self.repository.saveApiDatas(apiDatas)
                 self.downloadImages(apiDatas: apiDatas)
-                self.apiDatas.append(contentsOf: apiDatas)
             }).store(in: &cancellables)
     }
     
@@ -45,12 +49,28 @@ class MainViewModel: ObservableObject {
                 Task {
                     if let imageData = try? Data(contentsOf: imageUrl) {
                         await MainActor.run {
-                            self.repository.saveImageData(for: apiData.id, imageData: imageData)
+                            if let updateApiData = self.repository.saveImageData(for: apiData.id, imageData: imageData) {
+                                self.apiDatas.append(updateApiData)
+                            }
                         }
                     }
                 }
             }
         }
+    }
+    
+    func getUiImage(for apiData: ApiData) -> UIImage? {
+        guard let imageData = repository.getImageData(for: apiData.id),
+              let uiImage = UIImage(data: imageData) else {
+            return nil
+        }
+        return uiImage
+    }
+    
+    func loadMoreData(currentApiData: ApiData) {
+        guard !isLoading && !isOfflineMode else { return }
+        guard let lastItem = apiDatas.last, currentApiData.id == lastItem.id else { return }
+        fetchData()
     }
     
 }
