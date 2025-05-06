@@ -8,4 +8,5 @@ The following libraries are already included in the project:
 
 After cloning the repository, simply run:
 
+```bash
 pod install
